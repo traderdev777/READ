@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+@theme inline {
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-line: var(--line);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-red-900: var(--red-900);
+  --color-chrome-100: var(--chrome-100);
+  --color-chrome-300: var(--chrome-300);
+  --color-chrome-500: var(--chrome-500);
+  --color-detected: var(--detected);
+  --color-inferred: var(--inferred);
+  --color-risk: var(--risk);
+
+  --font-display: var(--font-michroma), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-4xl: var(--text-4xl);
+  --text-5xl: var(--text-5xl);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-glow: var(--glow-red);
+  --shadow-glow-soft: var(--glow-red-soft);
+  --shadow-chrome: var(--glow-chrome);
+
+  --ease-out-expo: var(--ease-out-expo);
+  --ease-in-out-quart: var(--ease-in-out-quart);
+  --tracking-display: var(--tracking-display);
+}
+
+/* Radii outside 4/8/14 are not part of the system. */
+@theme {
+  --radius-xs: initial;
+  --radius-xl: initial;
+  --radius-2xl: initial;
+  --radius-3xl: initial;
+  --radius-4xl: initial;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--ink-950);
+    color: var(--chrome-100);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: var(--red-900);
+    color: var(--chrome-100);
+  }
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--glow-red);
+    border-radius: var(--radius-sm);
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes red-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* Skeleton: a loading surface. Moves only to say "still loading". */
+.skeleton {
+  background: linear-gradient(90deg, var(--ink-800) 0%, #1b2030 50%, var(--ink-800) 100%);
+  background-size: 200% 100%;
+  animation: red-shimmer 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Same rules when the /system preview switch forces reduced motion. */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

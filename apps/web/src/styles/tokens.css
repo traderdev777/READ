@@ -1,0 +1,79 @@
+/*
+ * RED design tokens — the single source of truth.
+ * Tailwind reads these through @theme inline in globals.css; components and the
+ * /system gallery read the same variables. Change a value here and it changes everywhere.
+ */
+:root {
+  /* Color: black, signal red, chrome. One red only. */
+  --ink-950: #05060a; /* page */
+  --ink-900: #0b0d13; /* surface */
+  --ink-800: #141821; /* raised */
+  --line: #232936; /* borders */
+
+  --red-500: #ff1f1f; /* signal: action, focus, risk */
+  --red-600: #d10f0f; /* pressed */
+  --red-900: #5a0707; /* red on dark backgrounds, low emphasis */
+
+  --chrome-100: #f2f5fa; /* primary text */
+  --chrome-300: #c9d0dc; /* secondary text */
+  --chrome-500: #8a93a6; /* tertiary text, icons at rest */
+
+  --detected: #3ddc97; /* observed directly */
+  --inferred: #ffb020; /* deduced from signals */
+  --risk: #ff1f1f; /* a problem worth acting on */
+
+  /* Glow: shadows are light, not blur-drops. Red at 12% for focus/active. */
+  --glow-red:
+    0 0 0 1px rgb(255 31 31 / 0.55), 0 0 0 4px rgb(255 31 31 / 0.12), 0 0 24px rgb(255 31 31 / 0.12);
+  --glow-red-soft: 0 0 0 4px rgb(255 31 31 / 0.12);
+  --glow-chrome: 0 0 0 1px rgb(201 208 220 / 0.18);
+
+  /* Spacing: 4px base grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Radius: 4 / 8 / 14 only. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* Type: 1.25 ratio from a 16px base, fluid between 360px and 1440px viewports. */
+  --text-xs: clamp(0.64rem, 0.62rem + 0.08vw, 0.7rem); /* 16 / 1.25^2 */
+  --text-sm: clamp(0.8rem, 0.78rem + 0.1vw, 0.875rem); /* 16 / 1.25 */
+  --text-base: clamp(1rem, 0.97rem + 0.12vw, 1.0625rem); /* 16 */
+  --text-lg: clamp(1.15rem, 1.1rem + 0.25vw, 1.25rem); /* 20 */
+  --text-xl: clamp(1.35rem, 1.25rem + 0.45vw, 1.5625rem); /* 25 */
+  --text-2xl: clamp(1.6rem, 1.42rem + 0.8vw, 1.953rem); /* 31.25 */
+  --text-3xl: clamp(1.9rem, 1.6rem + 1.35vw, 2.441rem); /* 39 */
+  --text-4xl: clamp(2.2rem, 1.75rem + 2vw, 3.052rem); /* 48.8 */
+  --text-5xl: clamp(2.6rem, 1.9rem + 3.1vw, 3.815rem); /* 61 */
+  --tracking-display: -0.02em;
+  --tracking-mono: 0;
+
+  /* Motion. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --dur-1: 120ms; /* micro: hover, press */
+  --dur-2: 240ms; /* state: toggle, tab, tooltip */
+  --dur-3: 480ms; /* enter/exit: reveal, toast */
+  --dur-4: 900ms; /* sequence: scan sweep, dissolve */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 0ms;
+    --dur-2: 0ms;
+    --dur-3: 0ms;
+    --dur-4: 0ms;
+  }
+}

@@ -1,0 +1,20 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Dependencies allowed to run install scripts (pnpm 11+).
+allowBuilds:
+  "@tailwindcss/oxide": true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Same list for pnpm 10.
+minimumReleaseAgeExclude:
+  - lucide-react@1.67.0
+
+onlyBuiltDependencies:
+  - "@tailwindcss/oxide"
+  - esbuild
+  - sharp
+  - unrs-resolver
