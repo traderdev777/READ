@@ -1,5 +1,5 @@
 export { Reveal } from "./Reveal";
-export { PixelDissolve } from "./PixelDissolve";
+export { PixelDissolve, pixelOrder } from "./PixelDissolve";
 export { ScanLine } from "./ScanLine";
 export { MagneticButton } from "./MagneticButton";
 export { Cursor } from "./Cursor";

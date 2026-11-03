@@ -17,7 +17,7 @@ type PixelDissolveProps = {
 };
 
 /** Deterministic pseudo-random order so server and client agree. */
-function order(n: number, seed = 7) {
+export function pixelOrder(n: number, seed = 7) {
   const out = Array.from({ length: n }, (_, i) => i);
   let s = seed;
   for (let i = n - 1; i > 0; i--) {
@@ -42,7 +42,7 @@ export function PixelDissolve({
   label,
 }: PixelDissolveProps) {
   const reduce = usePrefersReducedMotion();
-  const cells = useMemo(() => order(cols * rows), [cols, rows]);
+  const cells = useMemo(() => pixelOrder(cols * rows), [cols, rows]);
   const step = dur.sequence / 2 / cells.length;
   return (
     <div

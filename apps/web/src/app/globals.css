@@ -120,3 +120,22 @@ html[data-motion="reduce"] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* HeroMark assembly: each pixel resolves in with its own delay (set inline). */
+@keyframes red-pixel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+.red-pixel {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: red-pixel-in var(--dur-3) var(--ease-out-expo) both;
+}
+
+/* Below-the-fold sections skip style, layout and paint until they near the viewport. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
