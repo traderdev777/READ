@@ -47,7 +47,10 @@ export function ConfidenceMeter({
   return (
     <div aria-disabled={disabled || undefined} className={cn("grid gap-2", className)}>
       <div className="flex items-baseline justify-between text-xs">
-        <span className="text-chrome-300">{label}{disabled && <span className="text-chrome-500"> · paused</span>}</span>
+        <span className="text-chrome-300">
+          {label}
+          {disabled && <span className="text-chrome-500"> · paused</span>}
+        </span>
         <span className="font-mono text-chrome-100">
           {v}
           <span className="text-chrome-500">/100 · {WORD[level]}</span>
@@ -71,7 +74,10 @@ export function ConfidenceMeter({
           />
         ))}
         <motion.span
-          className={cn("absolute inset-y-0 left-0 rounded-sm", disabled ? "bg-chrome-500/40" : COLOR[level])}
+          className={cn(
+            "absolute inset-y-0 left-0 rounded-sm",
+            disabled ? "bg-chrome-500/40" : COLOR[level],
+          )}
           initial={reduce ? false : { width: 0 }}
           animate={{ width: `${v}%` }}
           transition={{ duration: reduce ? 0 : dur.enter, ease: ease.outExpo }}
