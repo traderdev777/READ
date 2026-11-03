@@ -1,26 +1,21 @@
 {
-  "name": "read-app",
-  "version": "0.1.0",
+  "name": "red",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=20.9"
   },
-  "dependencies": {
-    "jszip": "^3.10.2",
-    "next": "16.4.4",
-    "playwright-core": "^1.64.1",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+  "scripts": {
+    "dev": "pnpm --filter @red/web dev",
+    "dev:scanner": "pnpm --filter @red/scanner dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.4",
-    "typescript": "^5"
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3"
   }
 }
