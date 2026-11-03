@@ -35,3 +35,7 @@
 .sampleBtn { padding: 8px 14px; border: 1px solid #e2e8f0; }
 .small { font-size: 12px; color: #94a3b8; margin-top: 6px; }
 @media (max-width: 600px) { .shots { flex-direction: column; } .shots .phone { flex: none; width: 60%; margin: 0 auto; } .metrics { grid-template-columns: repeat(2, 1fr); } }
+.report > * { min-width: 0; }
+.card { overflow: hidden; }
+.shots figure { min-width: 0; }
+.paths li { overflow-wrap: anywhere; }
