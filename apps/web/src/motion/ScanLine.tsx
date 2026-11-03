@@ -9,6 +9,8 @@ type ScanLineProps = {
   active: boolean;
   /** Seconds per sweep. Defaults to 2.4 s: slow enough to read as "working", not as an alarm. */
   period?: number;
+  /** Sweep a single time, then fade. Used for "analysis finished" moments. */
+  once?: boolean;
   className?: string;
 };
 
@@ -17,7 +19,7 @@ type ScanLineProps = {
  * Place inside a relatively positioned container. With reduced motion it becomes a
  * static red top border plus the parent's own "Analysing" text.
  */
-export function ScanLine({ active, period = 2.4, className }: ScanLineProps) {
+export function ScanLine({ active, period = 2.4, once = false, className }: ScanLineProps) {
   const line = useRef<HTMLDivElement>(null);
   const reduce = usePrefersReducedMotion();
 
@@ -27,16 +29,28 @@ export function ScanLine({ active, period = 2.4, className }: ScanLineProps) {
     const ctx = gsap.context(() => {
       if (active) {
         gsap.set(el, { autoAlpha: 1, yPercent: 0, top: 0 });
-        gsap.fromTo(el, { top: "0%" }, { top: "100%", duration: period, ease: "none", repeat: -1 });
+        gsap.fromTo(
+          el,
+          { top: "0%" },
+          {
+            top: "100%",
+            duration: period,
+            ease: once ? ease.gsap.inOutQuart : "none",
+            repeat: once ? 0 : -1,
+            onComplete: once
+              ? () => void gsap.to(el, { autoAlpha: 0, duration: dur.state })
+              : undefined,
+          },
+        );
       } else {
         gsap.to(el, { autoAlpha: 0, duration: dur.state, ease: ease.gsap.outExpo });
       }
     });
     return () => ctx.revert();
-  }, [active, period, reduce]);
+  }, [active, period, once, reduce]);
 
   if (reduce)
-    return active ? (
+    return active && !once ? (
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-x-0 top-0 h-px bg-red-500 ${className ?? ""}`}
