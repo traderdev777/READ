@@ -143,3 +143,21 @@
 .formGrid input[type=color] { height: 42px; padding: 4px; }
 .full { margin-bottom: 8px; }
 .main button, .main input, .main textarea { font-family: inherit; }
+.ask { display: flex; gap: 12px; align-items: flex-start; background: #f5f3ff; border-radius: 14px; padding: 12px 14px; margin: 0 0 14px; }
+.ask p { margin: 0; }
+.askAvatar { width: 28px; height: 28px; border-radius: 50%; background: #7c3aed; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; flex: none; }
+.stepper { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.stepDot { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 14px 6px 6px; cursor: pointer; font-size: 14px; }
+.stepDot span { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.stepOn { border-color: #7c3aed; color: #7c3aed; } .stepOn span { background: #7c3aed; color: #fff; }
+.stepDone span { background: #16a34a; color: #fff; }
+.navRow { display: flex; justify-content: space-between; gap: 10px; margin: 6px 0 24px; }
+.entity { border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+.mini { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; width: 100%; min-width: 110px; }
+.techRow { margin-bottom: 18px; } .techRow h4 { margin: 0 0 2px; }
+.tileOn { border: 2px solid #7c3aed !important; background: #faf5ff; }
+.planRow { display: grid; grid-template-columns: 1fr 110px 130px 2fr 44px; gap: 8px; margin-bottom: 8px; }
+.planRow input, .planRow select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; min-width: 0; }
+.warnText { color: #b45309; font-weight: 600; }
+.result details { margin: 8px 0; } .result summary { cursor: pointer; font-weight: 600; }
+@media (max-width: 720px) { .planRow { grid-template-columns: 1fr 1fr; } }

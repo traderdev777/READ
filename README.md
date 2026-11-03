@@ -54,3 +54,16 @@ Needs a Node server (not GitHub Pages): the scans run in API routes. The deep sc
 READ never copies third-party code or images into what it generates. Original text is reused only in exact mode, for sites you own.
 
 Env: `GEMINI_API_KEY` (optional AI), `CHROMIUM_PATH` (Chromium / headless-shell binary).
+
+## Build Studio (full-stack generator)
+
+Open **🛠 Build Studio** after a scan. READ interviews you step by step and compares the reference with your build at every step:
+
+1. **Basics**: name, tagline, what it does, audience, product type (prefilled from the scan).
+2. **Data**: the things users browse or manage (e.g. Listings, Stocks, Trades), their fields, filters and public/private visibility.
+3. **Features**: each capability with *reference has it?*, evidence, my suggestion and why, and your choice (auth, dashboard, admin, search, watchlist, reviews, contact, WhatsApp, newsletter, blog, Razorpay/Stripe, uploads, live market data, dark mode, SEO, PWA, analytics).
+4. **Technology**: database, auth and hosting options with pros/cons and the reference's stack side by side.
+5. **Design & plans**: colours, font, radius, theme, pricing plans.
+6. **Review & build**: final *Reference vs yours* table (both / only reference / extra in yours), then a downloadable project.
+
+The generated project is a real, working app (template in `studio-template/`): Next.js 16 + TypeScript, Prisma (SQLite or Postgres), email/password auth with bcrypt + signed JWT cookies, browse with search/filters/sort/pagination, detail pages, favourites, reviews, user dashboard with create/edit/delete, admin (users, roles, content, leads, subscribers, payments), blog with editor, contact leads, newsletter, Razorpay or Stripe checkout with signature verification, image uploads, live quotes API, sitemap/robots/manifest, dark mode, Dockerfile and seed script.

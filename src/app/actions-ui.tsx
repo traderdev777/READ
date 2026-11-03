@@ -92,7 +92,7 @@ export function SectionsTab({ d, id }: { d: DeepScan; id: string }) {
   );
 }
 
-export function BuildTab({ id, title }: { id: string; title: string }) {
+export function BuildTab({ id, title, onStudio }: { id: string; title: string; onStudio: () => void }) {
   const [brand, setBrand] = useState("");
   const [tagline, setTagline] = useState("");
   const [primary, setPrimary] = useState("#7c3aed");
@@ -111,26 +111,12 @@ export function BuildTab({ id, title }: { id: string; title: string }) {
         <p className={s.muted}>{title}</p>
         <div className={s.bigActions}>
           <button className={s.actionTile} disabled={!!busy} onClick={() => run("fix")}><b>{busy === "fix" ? "Working…" : "Fix everything"}</b><span>Ready-to-paste code for security headers, SEO metadata, JSON-LD, sitemap, images, scripts + a full checklist</span></button>
-          <button className={s.actionTile} disabled={!!busy} onClick={() => document.getElementById("gen")?.scrollIntoView({ behavior: "smooth" })}><b>Build my version</b><span>A new Next.js site with this structure, your brand and changes. Live preview + zip</span></button>
+          <button className={s.actionTile} onClick={onStudio}><b>Build my platform →</b><span>Step-by-step Build Studio: answers a few questions, compares with this site, generates a full working app</span></button>
         </div>
         <form className={s.askRow} onSubmit={(e) => { e.preventDefault(); if (ask.trim()) run("custom", { instruction: ask }); }}>
           <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Custom action, e.g. plan a mobile app version, or write the backend API for this" />
           <button className={s.btnGhost} disabled={!!busy}>{busy === "custom" ? "Working…" : "Run"}</button>
         </form>
-      </div>
-      <div className={s.card} id="gen">
-        <h3>Build my version</h3>
-        <div className={s.formGrid}>
-          <label>Brand name<input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. WowCars" /></label>
-          <label>Tagline<input value={tagline} onChange={(e) => setTagline(e.target.value)} placeholder="One line about what you do" /></label>
-          <label>Main colour<input type="color" value={primary} onChange={(e) => setPrimary(e.target.value)} /></label>
-          <label className={s.check}><input type="checkbox" checked={dark} onChange={(e) => setDark(e.target.checked)} /> Dark theme</label>
-        </div>
-        <label className={s.full}>Your changes<textarea value={changes} onChange={(e) => setChanges(e.target.value)} placeholder="e.g. Add a pricing page in ₹, remove the blog, add WhatsApp contact, focus on Bengaluru" rows={3} /></label>
-        <label className={s.check}><input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} /> Reuse the original text (exact mode)</label>
-        {exact && <label className={s.check}><input type="checkbox" checked={owns} onChange={(e) => setOwns(e.target.checked)} /> I own this site or have the rights to its content</label>}
-        <button className={s.btn} disabled={!!busy || !brand.trim()} onClick={() => run("generate", { input: { brand, tagline, primary, changes, dark } })}>{busy === "generate" ? "Generating…" : "Generate site"}</button>
-        <p className={s.small}>READ never copies the original site&apos;s code or images. Text is reused only in exact mode for sites you own. Changes are applied by the AI model when GEMINI_API_KEY is set; otherwise you get a clean template to edit.</p>
       </div>
       {res && <div className={s.card}><ResultView r={res} /></div>}
     </>

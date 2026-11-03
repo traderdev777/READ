@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   serverExternalPackages: ["playwright-core"],
+  outputFileTracingIncludes: { "/api/studio/generate": ["./studio-template/**/*"] },
 };
 
 export default nextConfig;

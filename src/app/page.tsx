@@ -6,10 +6,11 @@ import type { SitemapResult } from "@/lib/scan/sitemap";
 import type { Report, Finding, Area } from "@/lib/report";
 import type { Insight } from "@/lib/insight";
 import { SectionsTab, BuildTab } from "./actions-ui";
+import { StudioTab } from "./studio-ui";
 import s from "./page.module.css";
 
 type Analysis = { id: string; about: Insight; quick: ScanResult; deep: DeepScan | null; deepError: string | null; sitemap: SitemapResult | null; report: Report };
-const TABS = ["Overview", "What it does", "Tech", "Code", "Sections", "Build", "Issues", "Speed", "Design", "SEO", "Content", "Network", "Accessibility", "Security", "Sitemap", "Export"] as const;
+const TABS = ["Overview", "Build Studio", "What it does", "Tech", "Code", "Sections", "Build", "Issues", "Speed", "Design", "SEO", "Content", "Network", "Accessibility", "Security", "Sitemap", "Export"] as const;
 type Tab = (typeof TABS)[number];
 const STEPS = ["Fetching the page", "Opening it in a real browser", "Measuring speed and coverage", "Reading design tokens", "Checking SEO, accessibility and security", "Visiting on a phone", "Crawling the sitemap", "Scoring and writing the report"];
 
@@ -97,7 +98,7 @@ export default function Home() {
 
       {a && (
         <>
-          <nav className={s.tabs}>{TABS.map((t) => <button key={t} onClick={() => setTab(t)} className={tab === t ? s.tabOn : ""}>{t === "Build" ? "⚡ Build / Act" : t === "Sections" ? `Sections${a.deep ? ` (${a.deep.blocks.length})` : ""}` : t}{t === "Issues" ? ` (${a.report.findings.filter((f) => f.severity !== "pass").length})` : ""}</button>)}</nav>
+          <nav className={s.tabs}>{TABS.map((t) => <button key={t} onClick={() => setTab(t)} className={tab === t ? s.tabOn : ""}>{t === "Build Studio" ? "🛠 Build Studio" : t === "Build" ? "⚡ Fix / Act" : t === "Sections" ? `Sections${a.deep ? ` (${a.deep.blocks.length})` : ""}` : t}{t === "Issues" ? ` (${a.report.findings.filter((f) => f.severity !== "pass").length})` : ""}</button>)}</nav>
           {a.deepError && <div className={s.card}><p className={s.err}>The browser scan failed ({a.deepError}). Showing the fetch-based results only.</p></div>}
           <section className={s.report}>{render(tab, a, host, areaFilter, setAreaFilter, setTab)}</section>
         </>
@@ -200,7 +201,10 @@ function render(tab: Tab, a: Analysis, host: string, areaFilter: Area | "All", s
       return <SectionsTab d={d} id={a.id} />;
 
     case "Build":
-      return <BuildTab id={a.id} title={`Based on ${q.title || host}`} />;
+      return <BuildTab id={a.id} title={`Based on ${q.title || host}`} onStudio={() => setTab("Build Studio")} />;
+
+    case "Build Studio":
+      return <StudioTab id={a.id} blocks={d?.blocks.map((b) => b.kind) ?? []} />;
 
     case "Issues": {
       const list = r.findings.filter((f) => areaFilter === "All" || f.area === areaFilter);
