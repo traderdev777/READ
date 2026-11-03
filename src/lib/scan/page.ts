@@ -76,7 +76,7 @@ export async function scanPage(input: string): Promise<ScanResult> {
     fetchedMs,
     bytes: html.length,
     title: strip(head.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "") || null,
-    description: (metaTag("description") && attr(metaTag("description")!, "content")) || null,
+    description: (metaTag("description") && decode(attr(metaTag("description")!, "content") ?? "")) || null,
     lang: html.match(/<html[^>]+lang=["']([^"']+)/i)?.[1] ?? null,
     stack: detectStack(html, res.headers),
     meta: {
