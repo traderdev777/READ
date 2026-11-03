@@ -1,9 +1,11 @@
-// Full teardown in one call: quick fetch scan + real-browser scan + sitemap + scored report.
+// Full teardown in one call: quick fetch scan + real-browser scan + sitemap + scored report + "what it does".
 import { NextResponse } from "next/server";
 import { scanPage } from "@/lib/scan/page";
 import { deepScan } from "@/lib/scan/browser";
 import { discoverSitemap } from "@/lib/scan/sitemap";
 import { buildReport } from "@/lib/report";
+import { insight } from "@/lib/insight";
+import { saveAnalysis } from "@/lib/store";
 
 export const maxDuration = 120;
 
@@ -17,7 +19,10 @@ export async function POST(req: Request) {
       discoverSitemap(quick.finalUrl, quick.structure.navLinks.map((l) => l.href)).catch(() => null),
     ]);
     const report = await buildReport(quick, deep.ok, sitemap);
-    return NextResponse.json({ quick, deep: deep.ok, deepError: deep.err, sitemap, report });
+    const about = insight(quick, deep.ok, sitemap);
+    const body = { quick, deep: deep.ok, deepError: deep.err, sitemap, report, about };
+    const id = saveAnalysis(body);
+    return NextResponse.json({ id, ...body });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message.split("\n")[0] : "Analysis failed" }, { status: 422 });
   }

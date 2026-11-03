@@ -4,10 +4,12 @@ import type { ScanResult } from "@/lib/scan/page";
 import type { DeepScan } from "@/lib/scan/browser";
 import type { SitemapResult } from "@/lib/scan/sitemap";
 import type { Report, Finding, Area } from "@/lib/report";
+import type { Insight } from "@/lib/insight";
+import { SectionsTab, BuildTab } from "./actions-ui";
 import s from "./page.module.css";
 
-type Analysis = { quick: ScanResult; deep: DeepScan | null; deepError: string | null; sitemap: SitemapResult | null; report: Report };
-const TABS = ["Overview", "Issues", "Speed", "Design", "SEO", "Content", "Tech", "Network", "Accessibility", "Security", "Sitemap", "Export"] as const;
+type Analysis = { id: string; about: Insight; quick: ScanResult; deep: DeepScan | null; deepError: string | null; sitemap: SitemapResult | null; report: Report };
+const TABS = ["Overview", "What it does", "Tech", "Code", "Sections", "Build", "Issues", "Speed", "Design", "SEO", "Content", "Network", "Accessibility", "Security", "Sitemap", "Export"] as const;
 type Tab = (typeof TABS)[number];
 const STEPS = ["Fetching the page", "Opening it in a real browser", "Measuring speed and coverage", "Reading design tokens", "Checking SEO, accessibility and security", "Visiting on a phone", "Crawling the sitemap", "Scoring and writing the report"];
 
@@ -95,7 +97,7 @@ export default function Home() {
 
       {a && (
         <>
-          <nav className={s.tabs}>{TABS.map((t) => <button key={t} onClick={() => setTab(t)} className={tab === t ? s.tabOn : ""}>{t}{t === "Issues" ? ` (${a.report.findings.filter((f) => f.severity !== "pass").length})` : ""}</button>)}</nav>
+          <nav className={s.tabs}>{TABS.map((t) => <button key={t} onClick={() => setTab(t)} className={tab === t ? s.tabOn : ""}>{t === "Build" ? "⚡ Build / Act" : t === "Sections" ? `Sections${a.deep ? ` (${a.deep.blocks.length})` : ""}` : t}{t === "Issues" ? ` (${a.report.findings.filter((f) => f.severity !== "pass").length})` : ""}</button>)}</nav>
           {a.deepError && <div className={s.card}><p className={s.err}>The browser scan failed ({a.deepError}). Showing the fetch-based results only.</p></div>}
           <section className={s.report}>{render(tab, a, host, areaFilter, setAreaFilter, setTab)}</section>
         </>
@@ -149,6 +151,56 @@ function render(tab: Tab, a: Analysis, host: string, areaFilter: Area | "All", s
           {d && <div className={s.card}><h3>Features</h3><div className={s.chips}>{d.features.map((f) => <span key={f.name} className={f.found ? s.chip : s.chipOff}>{f.found ? "✓" : "–"} {f.name}</span>)}</div></div>}
         </>
       );
+
+    case "What it does": {
+      const ab = a.about;
+      return (
+        <>
+          <div className={s.card}>
+            <h3>What it is</h3>
+            <p className={s.lead}>{ab.oneLiner}</p>
+            <div className={s.stats}><Stat v={ab.category} l={`Category (${ab.confidence} confidence)`} /><Stat v={ab.audience.join(", ") || "General"} l="Audience" /><Stat v={ab.hosting ?? "Unknown"} l="Hosted on" /><Stat v={ab.pageTypes.length} l="Page types" /></div>
+            {ab.valueProp && <><h4>Main promise (H1)</h4><p>“{ab.valueProp}”</p></>}
+          </div>
+          {ab.offerings.length > 0 && <div className={s.card}><h3>What it offers</h3><p className={s.small}>From the page&apos;s section headings.</p><ul className={s.bullets}>{ab.offerings.map((o) => <li key={o}>{o}</li>)}</ul></div>}
+          <div className={s.card}>
+            <h3>How users use it</h3>
+            {ab.userFlows.length ? ab.userFlows.map((f) => <div key={f.name} className={s.flow}><b>{f.name}</b><div className={s.flowSteps}>{f.steps.map((x, i) => <span key={i}>{x}</span>)}</div></div>) : <p className={s.muted}>No clear flows on this page.</p>}
+          </div>
+          <div className={s.card}><h3>How it makes money</h3><ul className={s.bullets}>{ab.monetisation.map((m) => <li key={m}>{m}</li>)}</ul><p className={s.small}>Inferred from pricing, checkout, CTAs and ad pixels on the page.</p></div>
+          {ab.pageTypes.length > 0 && <div className={s.card}><h3>Pages and templates</h3><div className={s.chips}>{ab.pageTypes.map((p) => <span key={p} className={s.chip}>{p}</span>)}</div></div>}
+          {a.report.aiNarrative && <div className={s.card}><h3>AI analysis</h3><pre className={s.md}>{a.report.aiNarrative}</pre></div>}
+        </>
+      );
+    }
+
+    case "Code": {
+      if (!d) return <div className={s.card}><p className={s.muted}>Needs the browser scan.</p></div>;
+      const c = d.code;
+      return (
+        <>
+          <div className={s.card}>
+            <h3>How it&apos;s coded</h3>
+            <div className={s.stats}><Stat v={c.languages.length} l="Languages" /><Stat v={c.bundler ?? "Unknown"} l="Build tool" /><Stat v={c.scripts.length} l="Script files" /><Stat v={c.stylesheets.length} l="Stylesheets" /><Stat v={kb(c.htmlKB)} l="HTML size" /><Stat v={c.sourceMaps.length ? `${c.sourceTree.length} files` : "Not public"} l="Original source (maps)" /></div>
+            <p className={s.muted}>Rendering: {c.rendering}{c.generator ? ` · generator: ${c.generator}` : ""} · {c.inlineScripts} inline scripts ({kb(c.inlineKB)}), {c.inlineStyles} inline style blocks</p>
+            <div className={s.chips}>{c.languages.map((l) => <span key={l} className={s.chip}>{l}</span>)}</div>
+          </div>
+          {c.packages.length > 0 && <div className={s.card}><h3>npm packages used</h3><p className={s.small}>Read from the site&apos;s public source maps.</p><T head={["Package", "Files bundled", "npm"]} rows={c.packages.map((p) => [<code key="n">{p.name}</code>, p.files, <a key="l" className={s.link} href={`https://www.npmjs.com/package/${p.name}`} target="_blank" rel="noreferrer">view ↗</a>])} /></div>}
+          {c.sourceTree.length > 0 && <div className={s.card}><h3>Original source files ({c.sourceTree.length})</h3><p className={s.small}>The site publishes source maps, so its original file structure is visible.</p><ul className={s.paths}>{c.sourceTree.map((f) => <li key={f}>{f}</li>)}</ul></div>}
+          {!c.sourceMaps.length && <div className={s.card}><p className={s.muted}>This site doesn&apos;t publish source maps, so its original file names and packages aren&apos;t visible. Libraries were detected from the running page instead (Tech tab).</p></div>}
+          <div className={s.card}><h3>Scripts</h3><T head={["File", "Size", "Loading", "Type"]} rows={c.scripts.map((x) => [<code key="s">{x.src}</code>, kb(x.kb), x.loading, x.type])} /></div>
+          <div className={s.card}><h3>Stylesheets</h3><T head={["File", "Size"]} rows={c.stylesheets.map((x) => [<code key="s">{x.href}</code>, kb(x.kb)])} /></div>
+          <div className={s.card}><h3>Code samples</h3><p className={s.small}>Shown for study. Don&apos;t paste third-party code into your product; use Sections → Rebuild to get original code.</p>{c.samples.map((x) => <div key={x.label}><h4>{x.label}</h4><pre className={s.pre}>{x.code}</pre></div>)}</div>
+        </>
+      );
+    }
+
+    case "Sections":
+      if (!d) return <div className={s.card}><p className={s.muted}>Needs the browser scan.</p></div>;
+      return <SectionsTab d={d} id={a.id} />;
+
+    case "Build":
+      return <BuildTab id={a.id} title={`Based on ${q.title || host}`} />;
 
     case "Issues": {
       const list = r.findings.filter((f) => areaFilter === "All" || f.area === areaFilter);
@@ -329,6 +381,11 @@ function render(tab: Tab, a: Analysis, host: string, areaFilter: Area | "All", s
     case "Tech":
       return (
         <>
+          <div className={s.card}>
+            <h3>Technology stack</h3>
+            {a.about.techSummary.length > 0 && <ul className={s.bullets}>{a.about.techSummary.map((t) => <li key={t}>{t}</li>)}</ul>}
+            <T head={["Layer", "Technology"]} rows={a.about.stackLayers.map((l) => [l.layer, l.items.join(", ")])} />
+          </div>
           <div className={s.card}>
             <h3>Detected technologies</h3>
             <T head={["Technology", "Category", "Evidence"]} rows={[

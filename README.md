@@ -39,3 +39,18 @@ Needs a Node server (not GitHub Pages): the scans run in API routes. The deep sc
 - **Security:** HTTPS, 7 security headers explained, version leaks, cookie flags, redirect chain, JavaScript errors.
 - **Sitemap:** robots.txt, sitemap URLs, grouped page templates.
 - **Export:** Markdown report, raw JSON, full screenshot. Optional Gemini write-up when `GEMINI_API_KEY` is set.
+
+## What it does, code, and actions
+
+- **What it does:** category, audience, main promise, offerings, user flows (sign-up, purchase, discovery, leads), how it makes money, page templates.
+- **Tech:** plain-English stack summary plus a layer table (framework, languages, build tool, rendering, UI libraries, CMS, fonts, hosting, CDN, npm packages, third-party services).
+- **Code:** languages, bundler (Turbopack / Webpack / Vite…), rendering mode, every script and stylesheet with size and loading mode, original source file tree and npm packages when the site publishes source maps, code samples for study.
+- **Sections:** the page split into blocks (header, hero, listings, pricing, FAQ, footer…), each with a screenshot, issues, cleaned HTML and computed CSS, and actions:
+  - *Rebuild as code*: an original React component + CSS module with a live preview and zip.
+  - *Improve / fix*: section-specific fixes with code.
+  - *Custom instruction*: any change you describe (needs `GEMINI_API_KEY`).
+- **Build / Act (whole site):** *Fix everything* (security headers for Next.js / nginx / Vercel / Netlify, metadata + JSON-LD, sitemap/robots, image optimisation script, deferred tags, checklist), *Build my version* (Next.js project with preview + zip), or a custom instruction.
+
+READ never copies third-party code or images into what it generates. Original text is reused only in exact mode, for sites you own.
+
+Env: `GEMINI_API_KEY` (optional AI), `CHROMIUM_PATH` (Chromium / headless-shell binary).

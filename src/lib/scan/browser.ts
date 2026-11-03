@@ -6,6 +6,23 @@ import { normalizeUrl } from "./page";
 
 export type Req = { url: string; host: string; type: string; method: string; status: number | null; kb: number; ms: number | null; mime: string | null; cache: string | null; encoding: string | null; thirdParty: boolean };
 
+export type Block = {
+  index: number; kind: string; tag: string; selector: string; heading: string | null;
+  y: number; height: number; bg: string; color: string; layout: string; columns: number;
+  texts: string[]; buttons: string[]; links: number; images: { src: string; alt: string | null }[];
+  inputs: string[]; html: string; css: string; shot: string | null;
+  issues: string[];
+};
+export type CodeInfo = {
+  languages: string[]; bundler: string | null; rendering: string;
+  scripts: { src: string; kb: number; type: string; loading: string }[]; inlineScripts: number; inlineKB: number;
+  stylesheets: { href: string; kb: number }[]; inlineStyles: number;
+  sourceMaps: { bundle: string; map: string; files: number }[];
+  sourceTree: string[]; packages: { name: string; files: number }[];
+  htmlKB: number; generator: string | null; doctype: string | null;
+  samples: { label: string; lang: string; code: string }[];
+};
+
 export type DeepScan = {
   url: string;
   finalUrl: string;
@@ -54,6 +71,8 @@ export type DeepScan = {
   speed: { ttfbMs: number | null; fcpMs: number | null; lcpMs: number | null; lcpElement: string | null; cls: number | null; tbtMs: number; longTasks: number; domContentLoadedMs: number | null; loadMs: number | null; mobileLoadMs: number | null; mobileLcpMs: number | null };
   storage: { cookies: { name: string; domain: string; secure: boolean; httpOnly: boolean; sameSite: string; thirdParty: boolean; expiresDays: number | null }[]; localStorageKeys: number; sessionStorageKeys: number; serviceWorker: boolean };
   runtime: { name: string; version: string | null }[];
+  blocks: Block[];
+  code: CodeInfo;
   consoleErrors: string[];
   pageErrors: string[];
 };
@@ -182,6 +201,110 @@ export async function deepScan(input: string): Promise<DeepScan> {
     const fullH = await page.evaluate(() => document.documentElement.scrollHeight);
     const full = await page.screenshot({ type: "jpeg", quality: 40, fullPage: true, clip: { x: 0, y: 0, width: 1366, height: Math.min(fullH, 6000) } });
 
+    const rawBlocks = await page.evaluate(() => {
+      const vis = (el: Element) => { const r = el.getBoundingClientRect(); const st = getComputedStyle(el); return r.height > 40 && r.width > 200 && st.display !== "none" && st.visibility !== "hidden"; };
+      // Walk down single-child wrappers, then take the visible children as page blocks.
+      let root: Element = document.body;
+      for (let i = 0; i < 8; i++) {
+        const kids = Array.from(root.children).filter(vis);
+        if (kids.length === 1) root = kids[0]; else break;
+      }
+      let list: Element[] = [];
+      for (const k of Array.from(root.children).filter(vis)) {
+        if (k.tagName === "MAIN" || (k.children.length > 2 && k.getBoundingClientRect().height > window.innerHeight * 3 && !/^(HEADER|FOOTER|NAV)$/.test(k.tagName))) list.push(...Array.from(k.children).filter(vis));
+        else list.push(k);
+      }
+      list = list.filter((e) => !["SCRIPT", "STYLE", "NOSCRIPT", "LINK"].includes(e.tagName)).slice(0, 16);
+      const sel = (e: Element) => e.id ? `#${e.id}` : `${e.tagName.toLowerCase()}${typeof e.className === "string" && e.className.trim() ? "." + e.className.trim().split(/\s+/).slice(0, 2).join(".") : ""}`;
+      const styleOf = (e: Element | null, label: string) => {
+        if (!e) return "";
+        const st = getComputedStyle(e);
+        const pick = ["display", "grid-template-columns", "flex-direction", "gap", "justify-content", "align-items", "padding", "margin", "max-width", "background-color", "background-image", "color", "font-family", "font-size", "font-weight", "line-height", "letter-spacing", "text-align", "border-radius", "box-shadow", "border"];
+        const rules = pick.map((k) => [k, st.getPropertyValue(k)] as const).filter(([k, v]) => v && !["none", "normal", "0px", "auto", "rgba(0, 0, 0, 0)", "0px none rgb(0, 0, 0)", "start", "row"].includes(v) && !(k === "background-image" && v.length > 140));
+        return `/* ${label} */\n.${label.replace(/\W+/g, "-")} {\n${rules.map(([k, v]) => `  ${k}: ${v.slice(0, 120)};`).join("\n")}\n}`;
+      };
+      const clean = (e: Element) => {
+        const c = e.cloneNode(true) as Element;
+        c.querySelectorAll("script, style, noscript, iframe").forEach((x) => x.remove());
+        c.querySelectorAll("svg").forEach((x) => { x.innerHTML = "<!-- svg -->"; });
+        c.querySelectorAll("*").forEach((x) => { for (const a of Array.from(x.attributes)) if (a.name.startsWith("data-") || a.name === "style" && a.value.length > 120 || a.name.startsWith("on")) x.removeAttribute(a.name); });
+        return c.outerHTML.replace(/\s{2,}/g, " ").replace(/></g, ">\n<").slice(0, 6000);
+      };
+      return list.map((e, index) => {
+        const r = e.getBoundingClientRect(); const st = getComputedStyle(e);
+        let bg = st.backgroundColor; let p: Element | null = e;
+        while (p && (bg === "rgba(0, 0, 0, 0)" || bg === "transparent")) { p = p.parentElement; bg = p ? getComputedStyle(p).backgroundColor : "rgb(255, 255, 255)"; }
+        const texts: string[] = [];
+        const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+        while (tw.nextNode() && texts.length < 10) { const t = tw.currentNode.textContent!.trim().replace(/\s+/g, " "); const pe = tw.currentNode.parentElement; if (t.length > 2 && pe && vis(pe) === true || (t.length > 2 && pe && pe.getBoundingClientRect().height > 0)) { if (!texts.includes(t)) texts.push(t.slice(0, 140)); } }
+        const heading = ((e.querySelector("h1,h2,h3") as HTMLElement | null)?.innerText || e.querySelector("h1,h2,h3")?.textContent)?.trim().replace(/\s+/g, " ").slice(0, 100) ?? null;
+        // Layout: find the most-populated grid/flex container inside.
+        let cols = 1, layout = st.display;
+        for (const c of [e, ...Array.from(e.querySelectorAll("*")).slice(0, 400)]) {
+          const cs = getComputedStyle(c);
+          if (cs.display.includes("grid")) { const n = cs.gridTemplateColumns.split(" ").filter(Boolean).length; if (n > cols) { cols = n; layout = "grid"; } }
+          else if (cs.display.includes("flex") && cs.flexDirection.startsWith("row")) { const n = Array.from(c.children).filter((k) => k.getBoundingClientRect().width > 80).length; if (n > cols && n <= 8) { cols = n; layout = "flex row"; } }
+        }
+        const imgs = Array.from(e.querySelectorAll("img")).slice(0, 8);
+        const buttons = Array.from(e.querySelectorAll("button, a[class*=btn], a[class*=button], [role=button], input[type=submit]")).map((b) => (b.textContent || (b as HTMLInputElement).value || "").trim().replace(/\s+/g, " ")).filter((t) => t && t.length < 40).slice(0, 6);
+        const inputs = Array.from(e.querySelectorAll("input:not([type=hidden]), select, textarea")).map((i) => i.getAttribute("placeholder") || i.getAttribute("name") || i.getAttribute("type") || i.tagName.toLowerCase()).slice(0, 8);
+        const tag = e.tagName.toLowerCase();
+        const txt = (e.textContent || "").toLowerCase();
+        const kind =
+          tag === "header" || tag === "nav" || (index === 0 && r.height < 140) ? "Header / navigation" :
+          tag === "footer" || (index === list.length - 1 && e.querySelectorAll("a").length > 8) ? "Footer" :
+          e.querySelector("h1") || index <= 1 && r.height > 300 ? "Hero" :
+          imgs.length >= 4 && (txt.match(/₹|\$\s?\d|lakh|price/g) || []).length >= 3 ? "Product / listing grid" :
+          /pricing|per month|\/mo\b|\bplans?\b/.test(txt) && e.querySelectorAll("li").length > 4 ? "Pricing" :
+          /faq|frequently asked/.test(txt) || e.querySelector("details") ? "FAQ" :
+          /testimonial|what (our )?(customers|clients) (say|think)|customer reviews|loved by/.test(txt) ? "Testimonials" :
+          e.querySelectorAll("form, input").length > 1 ? "Form" :
+          imgs.length >= 5 && texts.length < 6 ? "Logo strip / gallery" :
+          (txt.match(/\d+[%+kKmM]/g) || []).length >= 3 && texts.length < 10 && r.height < 500 ? "Stats" :
+          cols >= 2 && (e.querySelectorAll("h3,h4").length >= 2) ? "Feature grid" :
+          buttons.length && texts.length <= 5 ? "Call to action" : "Content";
+        const issues: string[] = [];
+        const noAlt = imgs.filter((i) => !i.hasAttribute("alt")).length; if (noAlt) issues.push(`${noAlt} image(s) without alt text`);
+        const noLazy = imgs.filter((i) => i.loading !== "lazy").length; if (index > 1 && noLazy) issues.push(`${noLazy} image(s) not lazy-loaded`);
+        const noDims = imgs.filter((i) => !i.getAttribute("width")).length; if (noDims) issues.push(`${noDims} image(s) without width/height (layout shift risk)`);
+        const iconBtns = Array.from(e.querySelectorAll("button")).filter((b) => !(b.textContent || "").trim() && !b.getAttribute("aria-label")).length; if (iconBtns) issues.push(`${iconBtns} icon button(s) without aria-label`);
+        if (e.querySelectorAll("h1").length > 1) issues.push("More than one H1");
+        const unl = Array.from(e.querySelectorAll("input:not([type=hidden])")).filter((i) => !i.getAttribute("aria-label") && !(i.id && document.querySelector(`label[for="${CSS.escape(i.id)}"]`)) && !i.closest("label")).length; if (unl) issues.push(`${unl} input(s) without a label`);
+        return {
+          index, kind, tag, selector: sel(e), heading, y: Math.round(r.top + window.scrollY), height: Math.round(r.height), bg, color: st.color, layout, columns: cols,
+          texts, buttons, links: e.querySelectorAll("a").length, images: imgs.map((i) => ({ src: (i.currentSrc || i.src).slice(0, 200), alt: i.getAttribute("alt") })), inputs,
+          html: clean(e),
+          css: [styleOf(e, "section"), styleOf(e.querySelector("h1,h2"), "heading"), styleOf(e.querySelector("p"), "text"), styleOf(e.querySelector("button, a[class*=btn], a[class*=button]"), "button"), styleOf(e.querySelector("[class*=card], li, article"), "card")].filter(Boolean).join("\n\n"),
+          shot: null as string | null, issues,
+        };
+      });
+    }).catch(() => []);
+    const blocks = [];
+    for (const b of rawBlocks) {
+      let shot: string | null = null;
+      if (b.height > 0 && b.y < 9000) {
+        try { shot = jpeg(await page.screenshot({ type: "jpeg", quality: 45, fullPage: true, clip: { x: 0, y: b.y, width: 1366, height: Math.min(b.height, 1400) } })); } catch { /* */ }
+      }
+      blocks.push({ ...b, shot });
+    }
+
+    const pageInfo = await page.evaluate(() => {
+      const scripts = Array.from(document.scripts);
+      const inl = scripts.filter((x) => !x.src);
+      return {
+        scripts: scripts.filter((x) => x.src).map((x) => ({ src: x.src, type: x.type || "classic", loading: x.async ? "async" : x.defer ? "defer" : x.type === "module" ? "module" : "blocking" })).slice(0, 40),
+        inlineScripts: inl.length, inlineKB: Math.round(inl.reduce((a, x) => a + (x.textContent || "").length, 0) / 1024),
+        stylesheets: Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map((l) => (l as HTMLLinkElement).href).slice(0, 30),
+        inlineStyles: document.querySelectorAll("style").length,
+        generator: document.querySelector('meta[name="generator"]')?.getAttribute("content") ?? null,
+        doctype: document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : null,
+        htmlKB: Math.round(document.documentElement.outerHTML.length / 1024),
+        ssr: (document.body.innerText || "").length,
+        hasNextData: !!document.getElementById("__NEXT_DATA__"), rsc: !!Array.from(document.scripts).find((x) => (x.textContent || "").includes("self.__next_f")),
+        headSample: document.head.outerHTML.replace(/<script[\s\S]*?<\/script>/g, "<script>…</script>").replace(/<style[\s\S]*?<\/style>/g, "<style>…</style>").replace(/></g, ">\n<").slice(0, 3500),
+      };
+    });
+
     const data = await page.evaluate(() => {
       const visible = (el: Element) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none" && s.opacity !== "0"; };
       const all = Array.from(document.querySelectorAll("body *"));
@@ -248,7 +371,7 @@ export async function deepScan(input: string): Promise<DeepScan> {
       // Content
       const bodyText = document.body.innerText || "";
       const words = bodyText.split(/\s+/).filter(Boolean).length;
-      const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(visible).map((h) => ({ level: +h.tagName[1], text: (h.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120) })).filter((h) => h.text).slice(0, 60);
+      const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter(visible).map((h) => ({ level: +h.tagName[1], text: ((h as HTMLElement).innerText || h.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120) })).filter((h) => h.text).slice(0, 60);
       let skips = 0; for (let i = 1; i < headings.length; i++) if (headings[i].level - headings[i - 1].level > 1) skips++;
       const forms = Array.from(document.querySelectorAll("form")).slice(0, 10).map((f) => ({ action: f.getAttribute("action"), method: (f.getAttribute("method") || "get").toUpperCase(), fields: Array.from(f.querySelectorAll("input:not([type=hidden]), select, textarea")).map((i) => (i.getAttribute("name") || i.getAttribute("type") || i.tagName.toLowerCase())).slice(0, 12) }));
       const ctas = buttons.map((b) => b.text);
@@ -478,6 +601,51 @@ export async function deepScan(input: string): Promise<DeepScan> {
     const sumKB = (a: { _t: number }[]) => Math.round(a.reduce((s, x) => s + x._t, 0) / 1024);
     const unusedKB = (a: { _u: number }[]) => Math.round(a.reduce((s, x) => s + x._u, 0) / 1024);
 
+    // ---- Code: bundler, source maps (public ones only), packages ----
+    const jsTexts = (jsCov as { url: string; source?: string; text?: string }[]).filter((e) => e.url && !e.url.startsWith("data:")).map((e) => ({ url: e.url, src: e.source ?? e.text ?? "" }));
+    const allJs = jsTexts.map((x) => x.src.slice(0, 200000)).join("\n");
+    const bundler = /__turbopack_|TURBOPACK/.test(allJs) ? "Turbopack" : /webpackChunk|__webpack_require__/.test(allJs) ? "Webpack" : /import\.meta\.env|\/assets\/index-[\w-]{8}\.js|vite/.test(allJs + jsTexts.map((x) => x.url).join(" ")) ? "Vite / Rollup" : /parcelRequire/.test(allJs) ? "Parcel" : /esbuild/.test(allJs) ? "esbuild" : null;
+    const sourceMaps: { bundle: string; map: string; files: number }[] = [];
+    const sourceSet = new Set<string>(); const pkgs = new Map<string, number>();
+    const firstParty = jsTexts.filter((x) => !new URL(x.url).hostname.replace(/^www\./, "").endsWith(siteHost) ? false : true).sort((a, b) => b.src.length - a.src.length).slice(0, 8);
+    await Promise.all(firstParty.map(async (x) => {
+      const m = x.src.match(/\/\/[#@] sourceMappingURL=([^\s'"]+)\s*$/);
+      const mapUrl = m && !m[1].startsWith("data:") ? new URL(m[1], x.url).toString() : null;
+      if (!mapUrl) return;
+      try {
+        const res = await ctx.request.get(mapUrl, { timeout: 8000 });
+        if (!res.ok()) return;
+        const j = JSON.parse(await res.text()) as { sources?: string[] };
+        const srcs = (j.sources ?? []).map((p) => p.replace(/^(webpack|turbopack|vite|rollup):\/\/\/?(_N_E\/)?/, "").replace(/^\.\.?\//, "").replace(/\?.*$/, ""));
+        sourceMaps.push({ bundle: short(x.url, 100), map: short(mapUrl, 100), files: srcs.length });
+        for (const p of srcs) {
+          const nm = p.match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+          if (nm) pkgs.set(nm[1], (pkgs.get(nm[1]) ?? 0) + 1);
+          else if (!/^\(webpack\)|^webpack\/|^\[/.test(p)) sourceSet.add(p);
+        }
+      } catch { /* map not public */ }
+    }));
+    const langs = new Set<string>(["HTML", "CSS", "JavaScript"]);
+    for (const f of sourceSet) { if (/\.tsx?$/.test(f)) langs.add("TypeScript"); if (/\.(jsx|tsx)$/.test(f)) langs.add("JSX / React components"); if (/\.vue$/.test(f)) langs.add("Vue SFC"); if (/\.svelte$/.test(f)) langs.add("Svelte"); if (/\.s[ac]ss$/.test(f)) langs.add("Sass"); if (/\.module\.css$/.test(f)) langs.add("CSS Modules"); }
+    if (reqs.some((q) => q.type === "fetch" && /graphql/.test(q.url))) langs.add("GraphQL");
+    if (reqs.some((q) => /\.wasm(\?|$)/.test(q.url))) langs.add("WebAssembly");
+    const rendering = pageInfo.rsc ? "Server-rendered (React Server Components / App Router)" : pageInfo.hasNextData ? "Server-rendered (Next.js Pages Router)" : pageInfo.ssr > 400 ? "Server-rendered or static HTML" : "Client-rendered (content built by JavaScript)";
+    const reqKB = new Map(reqs.map((q) => [q.url, Math.round(q.kb)]));
+    const biggestFirst = firstParty[0];
+    const code: CodeInfo = {
+      languages: [...langs], bundler, rendering,
+      scripts: pageInfo.scripts.map((x) => ({ src: short(x.src, 140), kb: reqKB.get(x.src) ?? 0, type: x.type, loading: x.loading })),
+      inlineScripts: pageInfo.inlineScripts, inlineKB: pageInfo.inlineKB,
+      stylesheets: pageInfo.stylesheets.map((h) => ({ href: short(h, 140), kb: reqKB.get(h) ?? 0 })), inlineStyles: pageInfo.inlineStyles,
+      sourceMaps, sourceTree: [...sourceSet].sort().slice(0, 400),
+      packages: [...pkgs.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([name, files]) => ({ name, files })),
+      htmlKB: pageInfo.htmlKB, generator: pageInfo.generator, doctype: pageInfo.doctype,
+      samples: [
+        { label: "<head> (scripts collapsed)", lang: "html", code: pageInfo.headSample },
+        ...(biggestFirst ? [{ label: `Start of largest first-party bundle (${short(biggestFirst.url, 80)})`, lang: "javascript", code: biggestFirst.src.slice(0, 1800) }] : []),
+      ],
+    };
+
     const imgReqs = reqs.filter((q) => q.type === "image");
 
     return {
@@ -515,7 +683,7 @@ export async function deepScan(input: string): Promise<DeepScan> {
       },
       speed: { ...data.speed, mobileLoadMs, mobileLcpMs: mobileExtra.lcp },
       storage: { cookies, ...data.storage },
-      runtime, consoleErrors, pageErrors,
+      runtime, blocks, code, consoleErrors, pageErrors,
     };
   } finally {
     await ctx.close();
