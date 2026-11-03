@@ -105,7 +105,7 @@ Icons: Lucide only, `strokeWidth={1.5}`, `aria-hidden` when decorative.
 
 ### Logo
 
-`Logo.tsx` is drawn from the brand artwork: signal-red R with a chrome lower stem, trailing pixel squares, `</>` in the bowl, orbit swoosh; chrome RED wordmark with a red bar in the E. When the final vector file arrives, either pass `src="/brand/red-logo.svg"` or replace the `Mark` and `Wordmark` paths. Minimum height 16px. Clear space on every side equals the height of the E's red bar.
+`Logo.tsx` is drawn from the brand artwork: signal-red R with a chrome lower stem, trailing pixel squares, `</>` in the bowl, orbit swoosh; chrome RED wordmark with a red bar in the E. When the final vector file arrives, either pass `src="/brand/red-logo.svg"` or replace the `Mark` and `Wordmark` paths. Source artwork lives at `apps/web/public/brand/red-logo.webp` (1600 × 533, raster on black) for social cards and decks; the favicon is `apps/web/src/app/icon.svg`, drawn from the mark. Minimum height 16px. Clear space on every side equals the height of the E's red bar.
 
 ## 4. Anti-AI-look checklist
 

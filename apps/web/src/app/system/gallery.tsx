@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { ArrowRight, Download, Gauge, ScanSearch, ShieldAlert, Trash2, Wrench } from "lucide-react";
 import {
@@ -337,6 +338,23 @@ export function SystemGallery() {
               side.
             </p>
           </div>
+          <figure className="mt-10 grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:items-end md:gap-12">
+            <Image
+              src="/brand/red-logo.webp"
+              alt="RED brand artwork: red R mark with pixel squares, a code glyph and an orbit swoosh, beside the chrome RED wordmark"
+              width={1600}
+              height={533}
+              className="w-full rounded-lg border border-line"
+              priority={false}
+            />
+            <figcaption className="text-xs text-chrome-500">
+              <span className="font-mono text-chrome-300">/brand/red-logo.webp</span>
+              <br />
+              Source artwork, 1600 × 533, raster on black. Use it for social cards and decks. In the
+              interface use the SVG <span className="font-mono">&lt;Logo /&gt;</span>; pass{" "}
+              <span className="font-mono">src</span> once a vector master exists.
+            </figcaption>
+          </figure>
         </Section>
 
         <Section
